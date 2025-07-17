@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathematical Proof Assistant</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Computer Modern fonts from web -->
+    <link href="https://fonts.cdnfonts.com/css/computer-modern" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/latin-modern-roman" rel="stylesheet">
+    
+    <style>
+        /* Computer Modern LaTeX fonts with UNSW colors - Yellow primary */
+        :root {
+            --font-serif: 'Latin Modern Roman', 'Computer Modern Serif', 'Computer Modern', 'Times New Roman', serif;
+            --font-sans: 'Computer Modern Sans', 'Latin Modern Sans', 'Helvetica Neue', 'Arial', sans-serif;
+            --font-mono: 'Computer Modern Typewriter', 'Latin Modern Mono', 'Consolas', 'Monaco', monospace;
+            
+            /* UNSW Color Palette - Yellow Primary */
+            --unsw-yellow: #FFCD00;
+            --unsw-blue: #003366;
+            --unsw-light-blue: #E8F4F8;
+            --unsw-dark-blue: #002147;
+            --unsw-grey: #767676;
+            --unsw-light-grey: #F5F5F5;
+            --accent-gold: #B8860B;
+            --paper-white: #FEFEFE;
+            --text-dark: #2C2C2C;
+            --border-light: #e0e0e0;
+            --primary-yellow: #FFCD00;
+            --secondary-blue: #003366;
+        }
+
+        body {
+            font-family: var(--font-serif);
+            color: var(--text-dark);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: var(--paper-white);
+            font-size: 1.1rem;
+        }
+
+        /* Layout structure */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar styling - made narrower */
+        .sidebar {
+            width: 280px;
+            background-color: var(--paper-white);
+            border-right: 1px solid var(--border-light);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            background-color: var(--paper-white);
+            border-left: 4px solid var(--primary-yellow);
+        }
+
+        .sidebar-header h4 {
+            font-family: var(--font-sans);
+            font-weight: 600;
+            margin: 0;
+            color: var(--secondary-blue);
+            font-size: 1.3rem;
+        }
+
+        .sidebar-content {
+            padding: 1rem;
+        }
+
+        /* Week groupings */
+        .week-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .week-header {
+            font-family: var(--font-sans);
+            font-weight: 600;
+            color: var(--secondary-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--primary-yellow);
+            padding-bottom: 0.25rem;
+        }
+
+        /* Problem items */
+        .problem-item {
+            display: block;
+            padding: 0.75rem;
+            margin-bottom: 0.25rem;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .problem-item:hover {
+            background-color: var(--unsw-light-grey);
+            border-color: var(--primary-yellow);
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .problem-item.active {
+            background-color: var(--unsw-light-grey);
+            border-color: var(--primary-yellow);
+            border-left: 4px solid var(--primary-yellow);
+            color: var(--text-dark);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .problem-id {
+            font-family: var(--font-mono);
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--secondary-blue);
+        }
+
+        .problem-title {
+            font-family: var(--font-serif);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+            line-height: 1.3;
+        }
+
+        .problem-theory {
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+            opacity: 0.8;
+            font-weight: 500;
+            color: var(--unsw-grey);
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-light);
+            background-color: var(--paper-white);
+        }
+
+        .content-header h4 {
+            font-size: 1rem;
+            color: var(--secondary-blue);
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            background-color: var(--paper-white);
+        }
+
+        /* Problem display */
+        .problem-statement {
+            background-color: var(--unsw-light-grey);
+            border: 1px solid var(--border-light);
+            border-left: 4px solid var(--primary-yellow);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .problem-meta {
+            font-family: var(--font-sans);
+            font-size: 1.05rem;
+            color: var(--secondary-blue);
+            margin-bottom: 1rem;
+        }
+
+        .problem-description {
+            font-family: var(--font-serif);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+
+        .goal-formula {
+            font-family: var(--font-mono);
+            background-color: var(--paper-white);
+            padding: 1.2rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-light);
+            text-align: center;
+            font-size: 1.3rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Hints section */
+        .hints-section {
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-light);
+            padding-top: 1rem;
+        }
+
+        .hints-toggle {
+            background: none;
+            border: none;
+            color: var(--secondary-blue);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0;
+        }
+
+        .hints-toggle:hover {
+            color: var(--accent-gold);
+        }
+
+        .hints-toggle i {
+            transition: transform 0.2s ease;
+        }
+
+        .hints-toggle.expanded i {
+            transform: rotate(90deg);
+        }
+
+        .hints-content {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .hints-content.show {
+            display: block;
+        }
+
+        .hint-item {
+            background-color: var(--paper-white);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            font-family: var(--font-serif);
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .hint-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .hint-number {
+            font-family: var(--font-sans);
+            font-weight: 600;
+            color: var(--secondary-blue);
+            margin-right: 0.5rem;
+        }
+
+        /* Proof table */
+        .proof-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            margin: 1.5rem 0;
+            background-color: var(--paper-white);
+        }
+
+        .proof-table th {
+            background: linear-gradient(135deg, var(--unsw-light-blue), #F0F8FF);
+            border: 1px solid var(--border-light);
+            padding: 0.75rem;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            text-align: left;
+            color: var(--unsw-blue);
+        }
+
+        .proof-table td {
+            border: 1px solid var(--border-light);
+            padding: 0.75rem;
+            vertical-align: middle;
+        }
+
+        .proof-step-row:nth-child(even) {
+            background-color: #FAFAFA;
+        }
+
+        .proof-step-row:hover {
+            background-color: var(--unsw-light-blue);
+        }
+
+        .step-expression {
+            font-family: var(--font-mono);
+            font-weight: 500;
+        }
+
+        .step-rule {
+            font-family: var(--font-serif);
+            color: var(--unsw-grey);
+        }
+
+        .starting-expression-row {
+            background: linear-gradient(135deg, #FFF8DC, #F5F5DC);
+            font-weight: 600;
+        }
+
+        /* Input area */
+        .input-section {
+            background-color: var(--paper-white);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .symbol-btn {
+            margin: 2px;
+            min-width: 40px;
+            padding: 0.35rem 0.6rem;
+            background-color: var(--unsw-light-grey);
+            border: 1px solid var(--border-light);
+            color: var(--secondary-blue);
+            font-family: var(--font-mono);
+            border-radius: 3px;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .symbol-btn:hover {
+            background-color: var(--primary-yellow);
+            color: var(--secondary-blue);
+            border-color: var(--accent-gold);
+        }
+
+        .form-control, .form-select {
+            font-family: var(--font-serif);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 1.1rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-yellow);
+            box-shadow: 0 0 0 0.2rem rgba(255, 205, 0, 0.25);
+        }
+
+        #formula-input {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+        }
+
+        .form-label {
+            font-family: var(--font-sans);
+            font-weight: 600;
+            color: var(--secondary-blue);
+            font-size: 1.1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            font-family: var(--font-sans);
+            border-radius: 4px;
+            font-size: 1.1rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-blue);
+            border-color: var(--secondary-blue);
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--unsw-dark-blue);
+            border-color: var(--unsw-dark-blue);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--accent-gold);
+            border-color: var(--accent-gold);
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: var(--primary-yellow);
+            border-color: var(--primary-yellow);
+            color: var(--secondary-blue);
+            font-weight: 600;
+        }
+
+        .btn-outline-secondary {
+            color: var(--unsw-grey);
+            border-color: var(--border-light);
+        }
+
+        .btn-outline-primary {
+            color: var(--secondary-blue);
+            border-color: var(--secondary-blue);
+        }
+
+        /* Edit/delete buttons */
+        .edit-step-btn, .delete-step-btn {
+            padding: 0.125rem 0.375rem;
+            margin-left: 0.25rem;
+            font-size: 0.8rem;
+        }
+
+        .edit-step-btn {
+            background-color: var(--secondary-blue);
+            border-color: var(--secondary-blue);
+            color: white;
+        }
+
+        .delete-step-btn {
+            background-color: #DC3545;
+            border-color: #DC3545;
+            color: white;
+        }
+
+        /* Edit/delete buttons */
+        .edit-step-btn, .delete-step-btn {
+            padding: 0.125rem 0.375rem;
+            margin-left: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .edit-step-btn {
+            background-color: var(--secondary-blue);
+            border-color: var(--secondary-blue);
+            color: white;
+        }
+
+        .delete-step-btn {
+            background-color: #DC3545;
+            border-color: #DC3545;
+            color: white;
+        }
+
+        /* Messages */
+        .alert {
+            border-radius: 4px;
+            font-family: var(--font-serif);
+            font-size: 1rem;
+        }
+
+        .alert-success {
+            background-color: #FFF8E1;
+            border-color: var(--accent-gold);
+            color: var(--secondary-blue);
+        }
+
+        .alert-danger {
+            background-color: #FFF0F0;
+            border-color: #DC3545;
+            color: #B02A37;
+        }
+
+        /* Export modal */
+        .export-content {
+            background-color: var(--unsw-light-grey);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.4;
+            user-select: all;
+        }
+
+        /* Loading state */
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--unsw-grey);
+            font-family: var(--font-sans);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 250px;
+            }
+            
+            .content-body {
+                padding: 1rem;
+            }
+        }
+
+        /* Utility classes */
+        .text-mono { font-family: var(--font-mono); }
+        .text-sans { font-family: var(--font-sans); }
+        .text-serif { font-family: var(--font-serif); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h4>Proof Assistant</h4>
+            </div>
+            <div class="sidebar-content">
+                <div id="problems-loading" class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading proof problems...</p>
+                </div>
+                <div id="problems-list" style="display: none;">
+                    <!-- Problems will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Content header -->
+            <div class="content-header">
+                <div id="no-problem-selected" class="loading-state">
+                    <h4>Select a Problem</h4>
+                    <p>Choose a problem from the sidebar to begin proving.</p>
+                </div>
+                <div id="problem-header" style="display: none;">
+                    <h4 id="current-problem-title">Problem Title</h4>
+                    <div class="problem-meta">
+                        <span id="current-problem-id" class="text-mono"></span> · 
+                        <span id="current-problem-theory"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content body -->
+            <div class="content-body">
+                <div id="problem-content" style="display: none;">
+                    <!-- Messages -->
+                    <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+                    <div id="success-message" class="alert alert-success" style="display: none;"></div>
+
+                    <!-- Problem statement -->
+                    <div class="problem-statement">
+                        <div class="problem-description" id="problem-description"></div>
+                        <div class="text-center">
+                            <div class="goal-formula">
+                                <span id="problem-lhs" class="text-mono"></span>
+                                <span class="mx-3">=</span>
+                                <span id="problem-rhs" class="text-mono"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Hints section -->
+                        <div id="hints-section" class="hints-section" style="display: none;">
+                            <button class="hints-toggle" onclick="toggleHints()">
+                                <i class="fas fa-chevron-right"></i>
+                                Show Hints
+                            </button>
+                            <div id="hints-content" class="hints-content">
+                                <!-- Hints will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proof table -->
+                    <table class="proof-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60%;">Expression</th>
+                                <th style="width: 40%;">Justification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="starting-expression-row">
+                                <td class="step-expression" id="starting-expression"></td>
+                                <td class="step-rule">Given</td>
+                            </tr>
+                            <tbody id="proof-steps"></tbody>
+                        </tbody>
+                    </table>
+
+                    <!-- Input section -->
+                    <div id="current-input" class="input-section">
+                        <h6 class="text-sans mb-3">Next Step</h6>
+                        
+                        <!-- Symbol buttons -->
+                        <div class="mb-3">
+                            <label class="form-label">Mathematical Symbols:</label>
+                            <div id="symbol-buttons">
+                                <!-- Buttons will be populated by JavaScript -->
+                            </div>
+                            <div class="keyboard-hint">
+                                <i class="fas fa-keyboard"></i>
+                                Use keyboard shortcuts 0-9 to quickly insert symbols
+                            </div>
+                        </div>
+
+                        <!-- Formula input -->
+                        <div class="mb-3">
+                            <label for="formula-input" class="form-label">Expression:</label>
+                            <input type="text" 
+                                   id="formula-input" 
+                                   class="form-control" 
+                                   placeholder="Enter the next expression in your proof..."
+                                   autocomplete="off">
+                        </div>
+
+                        <!-- Rule selection -->
+                        <div class="mb-3">
+                            <label for="rule-select" class="form-label">Applied Rule:</label>
+                            <select id="rule-select" class="form-select">
+                                <option value="">Select a rule...</option>
+                            </select>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="d-flex gap-2">
+                            <button id="check-step" class="btn btn-primary">
+                                <i class="fas fa-check"></i>
+                                Validate Step
+                            </button>
+                            <button id="cancel-edit" class="btn btn-warning" style="display: none;">
+                                <i class="fas fa-times"></i>
+                                Cancel Edit
+                            </button>
+                            <button id="restart" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo"></i>
+                                Restart Proof
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Proof completion -->
+                    <div id="proof-complete" class="mt-4" style="display: none;">
+                        <div class="alert alert-success">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-check-circle"></i>
+                                Proof Complete
+                            </h6>
+                            <p class="mb-3">The proof has been successfully constructed and validated.</p>
+                            
+                            <!-- Export buttons -->
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary export-btn" data-format="latex">
+                                    <i class="fas fa-file-pdf"></i>
+                                    Export LaTeX
+                                </button>
+                                <button class="btn btn-outline-primary export-btn" data-format="markdown">
+                                    <i class="fas fa-file-text"></i>
+                                    Export Markdown
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal fade" id="export-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="export-modal-title">Export Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Generated Output:</label>
+                        <div class="export-content"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="copyExportContent()">
+                        <i class="fas fa-copy"></i>
+                        Copy to Clipboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript modules -->
+    <script src="js/problems.js"></script>
+    <script src="js/core/ast.js"></script>
+    <script src="js/core/parser.js"></script>
+    <script src="js/core/formatter.js"></script>
+    <script src="js/theories/set_theory.js"></script>
+    <script src="js/theories/boolean_algebra.js"></script>
+    <script src="js/theories/propositional_logic.js"></script>
+    <script src="js/ui/ui.js"></script>
+    <script src="js/main.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Global functions
+        function editStep(stepIndex) {
+            window.ProofAssistant.UI.enterEditMode(stepIndex);
+        }
+
+        function deleteStep(stepIndex) {
+            window.ProofAssistant.UI.deleteStep(stepIndex);
+        }
+
+        function copyExportContent() {
+            const content = document.querySelector('.export-content').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Content copied to clipboard!');
+            }).catch(() => {
+                alert('Failed to copy content');
+            });
+        }
+
+        function toggleHints() {
+            const hintsContent = document.getElementById('hints-content');
+            const hintsToggle = document.querySelector('.hints-toggle');
+            
+            if (hintsContent.classList.contains('show')) {
+                hintsContent.classList.remove('show');
+                hintsToggle.classList.remove('expanded');
+                hintsToggle.innerHTML = '<i class="fas fa-chevron-right"></i> Show Hints';
+            } else {
+                hintsContent.classList.add('show');
+                hintsToggle.classList.add('expanded');
+                hintsToggle.innerHTML = '<i class="fas fa-chevron-right"></i> Hide Hints';
+            }
+        }
+    </script>
+</body>
+</html>
