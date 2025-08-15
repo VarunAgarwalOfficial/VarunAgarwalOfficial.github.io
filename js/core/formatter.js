@@ -1,8 +1,5 @@
 /**
  * Output Formatting Module
- * 
- * Handles converting ASTs and proof content to different output formats
- * Supports LaTeX, HTML, Markdown, and display formats
  */
 
 window.ProofAssistant = window.ProofAssistant || {};
@@ -11,97 +8,78 @@ window.ProofAssistant.Formatter = (function() {
     'use strict';
 
     /**
-     * Main formatting dispatch function
-     * @param {string} type - Output format ('latex', 'markdown', 'html')
-     * @param {Object} content - Proof content with LHS, RHS, expressions, rules
-     * @returns {string} Formatted output string
+     * Format proof content
      */
-    function formatProof(type, content) {
+    function formatProof(type, content, parser) {
+        if (!parser) return 'Error: Parser required';
+
         switch(type) {
-            case 'latex':
-                return formatAsLaTeX(content);
-            case 'markdown':
-                return formatAsMarkdown(content);
-            case 'html':
-                return formatAsHTML(content);
-            default:
-                return 'Format not supported: ' + type;
+            case 'latex': return formatAsLaTeX(content, parser);
+            case 'markdown': return formatAsMarkdown(content, parser);
+            case 'html': return formatAsHTML(content, parser);
+            default: return 'Format not supported: ' + type;
         }
     }
 
     /**
-     * Generate LaTeX format for proof display (minimal version)
-     * Creates a simple mathematical proof table
-     * @param {Object} content - Proof content
-     * @returns {string} LaTeX formatted string
+     * Generate LaTeX format
      */
-    function formatAsLaTeX(content) {
+    function formatAsLaTeX(content, parser) {
         if (!content) return '';
         
-        // Start LaTeX array environment for proof steps
-        let result = "\\[\\begin{array}{rclr}\n    " + convertToLaTeX(content.LHS);
+        let result = "\\[\\begin{array}{rclr}\n    " + convertToLaTeX(content.LHS, parser);
         
-        // Add each proof step with rule justification
         if (content.expressions && content.rules) {
-            for(let i = 0; i < content.expressions.length; i++) {
-                const expr = convertToLaTeX(content.expressions[i], false);
+            content.expressions.forEach((expr, i) => {
+                const latexExpr = convertToLaTeX(expr, parser);
                 const rule = getRuleDisplayName(content.rules[i]);
-                result += " &" + getEqualitySymbol("latex") + "& " + expr + 
-                         " &\\quad\\text{(" + rule + ")}\\\\\n    ";
-            }
+                
+                // Convert symbols in rule text to LaTeX as well
+                const latexRuleText = replaceSymbols(rule, parser.getSymbols(), 'latex');
+                
+                result += " &= & " + latexExpr + " & \\quad \\text{(" + latexRuleText + ")}\\\\\n    ";
+            });
         }
         
-        // Remove trailing comma and newline, close array
         result = result.replace(/\\\\\n    $/, '');
         result += "\n\\end{array}\\]";
-        
         return result;
     }
 
     /**
-     * Generate Markdown table format for proof display (minimal version)
-     * @param {Object} content - Proof content
-     * @returns {string} Markdown formatted string
+     * Generate Markdown format
      */
-    function formatAsMarkdown(content) {
+    function formatAsMarkdown(content, parser) {
         if (!content) return '';
         
-        // Create markdown table with proof steps
         let result = "| Expression | Rule |\n|------------|------|\n";
-        result += "| " + convertToMarkdown(content.LHS) + " | Given |\n";
+        result += "| " + convertToMarkdown(content.LHS, parser) + " | Given |\n";
         
-        // Add each step as table row
         if (content.expressions && content.rules) {
-            for(let i = 0; i < content.expressions.length; i++) {
-                const expr = convertToMarkdown(content.expressions[i]);
+            content.expressions.forEach((expr, i) => {
+                const mdExpr = convertToMarkdown(expr, parser);
                 const rule = getRuleDisplayName(content.rules[i]);
-                result += "| " + expr + " | " + rule + " |\n";
-            }
+                result += "| " + mdExpr + " | " + rule + " |\n";
+            });
         }
         
         return result;
     }
 
     /**
-     * Generate HTML table format for proof display
-     * @param {Object} content - Proof content
-     * @returns {string} HTML formatted string
+     * Generate HTML format
      */
-    function formatAsHTML(content) {
+    function formatAsHTML(content, parser) {
         if (!content) return '';
         
-        // Create HTML table with proof steps
-        let result = '<table style="white-space:nowrap;">';
-        result += '<tr><td>' + escapeHTML(content.LHS) + '</td><td></td></tr>';
+        let result = '<table><tr><td>' + escapeHTML(content.LHS) + '</td><td></td></tr>';
         
-        // Add each step as table row
         if (content.expressions && content.rules) {
-            for(let i = 0; i < content.expressions.length; i++) {
-                const expr = escapeHTML(content.expressions[i]);
+            content.expressions.forEach((expr, i) => {
                 const rule = getRuleDisplayName(content.rules[i]);
-                result += '<tr><td></td><td>&nbsp;' + getEqualitySymbol("display") + 
-                         ' ' + expr + '</td><td>&nbsp;&nbsp;&nbsp;(' + escapeHTML(rule) + ')</td></tr>';
-            }
+                result += '<tr><td></td><td>= ' + escapeHTML(expr) + 
+                         '</td><td>(' + escapeHTML(rule) + ')</td></tr>';
+            });
         }
         
         result += '</table>';
@@ -109,300 +87,93 @@ window.ProofAssistant.Formatter = (function() {
     }
 
     /**
-     * Get the display name for a rule (converts internal names to proper names)
-     * @param {string|Object} rule - Rule name (string) or rule object
-     * @returns {string} Proper display name for the rule
+     * Convert to LaTeX with symbol replacement
      */
-    function getRuleDisplayName(rule) {
-        // If it's already an object with text property, use that
-        if (typeof rule === 'object' && rule.text) {
-            return rule.text;
-        }
+    function convertToLaTeX(input, parser) {
+        if (!input || !parser) return '';
         
-        // If it's a string, try to look up the proper name
-        if (typeof rule === 'string') {
-            // Get current theory to look up rule definitions
-            const state = window.ProofAssistant.Main ? window.ProofAssistant.Main.getState() : null;
-            if (state && state.theory && window.ProofAssistant.Theories) {
-                // Get the current theory module
-                let currentTheory = null;
-                switch(state.theory.name) {
-                    case 'set_theory':
-                        currentTheory = window.ProofAssistant.Theories.SetTheory;
-                        break;
-                    case 'bool_alg':
-                        currentTheory = window.ProofAssistant.Theories.BooleanAlgebra;
-                        break;
-                    case 'prop_logic':
-                        currentTheory = window.ProofAssistant.Theories.PropositionalLogic;
-                        break;
-                }
-                
-                // Look up the rule definition
-                if (currentTheory && currentTheory.rules) {
-                    const ruleDefinition = currentTheory.rules.find(r => r.name === rule);
-                    if (ruleDefinition && ruleDefinition.text) {
-                        return ruleDefinition.text;
-                    }
-                }
-            }
+        const str = normalizeInput(input, parser);
+        const symbols = parser.getSymbols();
+        const result = replaceSymbols(str, symbols, 'latex');
+        return addLaTeXSpacing(result);
+    }
+
+    /**
+     * Convert to Markdown with symbol replacement
+     */
+    function convertToMarkdown(input, parser) {
+        if (!input || !parser) return '';
+        
+        const str = normalizeInput(input, parser);
+        const symbols = parser.getSymbols();
+        return replaceSymbols(str, symbols, 'markdown');
+    }
+
+    /**
+     * Normalize input to string
+     */
+    function normalizeInput(input, parser) {
+        if (typeof input === 'string') return input;
+        if (window.ProofAssistant.AST?.isValidNode(input)) {
+            const [text] = parser.unparse(input, 'text');
+            return text;
+        }
+        return String(input);
+    }
+
+    /**
+     * Replace symbols with display format
+     */
+    function replaceSymbols(str, symbols, format) {
+        if (!symbols?.length) return str;
+        
+        const symbolRegex = symbols
+            .map(s => s.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .join('|');
             
-            // Fallback: return the rule name as-is
-            return rule;
-        }
-        
-        // Fallback for unknown format
-        return String(rule);
-    }
-
-    /**
-     * Convert AST to LaTeX format
-     * @param {Object|string} input - AST node or string
-     * @param {boolean} inText - Whether output is for text mode (adds $ delimiters)
-     * @returns {string} LaTeX formatted string
-     */
-    function convertToLaTeX(input, inText = false) {
-        if (!input) return '';
-        
-        let str;
-        if (typeof input === 'string') {
-            str = input;
-        } else if (window.ProofAssistant.AST && window.ProofAssistant.AST.isValidNode(input)) {
-            // Convert AST to string first
-            const [text] = window.ProofAssistant.Parser.unparse(input, 'text');
-            str = text;
-        } else {
-            str = String(input);
-        }
-        
-        // Replace symbols with LaTeX equivalents
-        const symbols = window.ProofAssistant.Parser.getSymbols();
-        const symbolRegex = buildSymbolRegex(symbols);
-        
-        if (!symbolRegex) return str;
-        
-        const re = new RegExp(symbolRegex, "g");
-        const result = str.replace(re, txt => {
-            const symbol = findSymbol(symbols, "text", txt);
-            if (symbol && symbol.latex) {
-                return symbol.latex;
-            }
-            return txt;
-        });
-        
-        return inText ? "$" + result + "$" : result;
-    }
-
-    /**
-     * Convert AST to Markdown format
-     * @param {Object|string} input - AST node or string
-     * @returns {string} Markdown formatted string
-     */
-    function convertToMarkdown(input) {
-        if (!input) return '';
-        
-        let str;
-        if (typeof input === 'string') {
-            str = input;
-        } else if (window.ProofAssistant.AST && window.ProofAssistant.AST.isValidNode(input)) {
-            // Convert AST to string first
-            const [text] = window.ProofAssistant.Parser.unparse(input, 'text');
-            str = text;
-        } else {
-            str = String(input);
-        }
-        
-        // Replace symbols with Markdown equivalents (keep Unicode symbols)
-        const symbols = window.ProofAssistant.Parser.getSymbols();
-        const symbolRegex = buildSymbolRegex(symbols);
-        
-        if (!symbolRegex) return str;
-        
         const re = new RegExp(symbolRegex, "g");
         return str.replace(re, txt => {
-            const symbol = findSymbol(symbols, "text", txt);
+            const symbol = symbols.find(s => s.text === txt);
             if (symbol) {
-                // Use markdown if available, otherwise use display (Unicode)
-                return symbol.markdown || symbol.display || txt;
+                return symbol[format] || symbol.display || txt;
             }
             return txt;
         });
     }
 
     /**
-     * Format an AST node to a specific output type
-     * @param {Object} ast - AST node
-     * @param {string} format - Output format ('text', 'latex', 'markdown', 'display')
-     * @returns {string} Formatted string
+     * Add spacing around LaTeX binary operators
      */
-    function formatAST(ast, format) {
-        if (!ast || !window.ProofAssistant.AST.isValidNode(ast)) {
-            return '';
-        }
+    function addLaTeXSpacing(str) {
+        const binaryOps = ['\\cup', '\\cap', '\\vee', '\\wedge', '\\rightarrow', '\\leftrightarrow'];
         
-        // Get the basic text representation
-        const [text] = window.ProofAssistant.Parser.unparse(ast, 'text');
-        
-        switch(format) {
-            case 'latex':
-                return convertToLaTeX(text, false);
-            case 'markdown':
-                return convertToMarkdown(text);
-            case 'display':
-                return text; // Already in display format from unparse
-            case 'text':
-            default:
-                return text;
-        }
+        return binaryOps.reduce((result, op) => {
+            const regex = new RegExp(`([A-Za-z0-9})])\\s*${op.replace(/\\/g, '\\\\')}\\s*([A-Za-z0-9{(])`, 'g');
+            return result.replace(regex, `$1 ${op} $2`);
+        }, str);
     }
 
     /**
-     * Format a single proof step
-     * @param {Object} step - Step object with expression and rule
-     * @param {string} format - Output format
-     * @returns {string} Formatted step
+     * Get rule display name
      */
-    function formatProofStep(step, format) {
-        if (!step || !step.expression) return '';
-        
-        const expr = formatAST(step.expression, format);
-        const rule = getRuleDisplayName(step.rule);
-        
-        switch(format) {
-            case 'latex':
-                return `&= ${expr} &\\quad\\text{(${rule})}\\\\`;
-            case 'markdown':
-                return `| ${expr} | ${rule} |`;
-            case 'html':
-                return `<tr><td></td><td>&nbsp;= ${escapeHTML(expr)}</td><td>&nbsp;&nbsp;&nbsp;(${escapeHTML(rule)})</td></tr>`;
-            default:
-                return `= ${expr} (${rule})`;
-        }
-    }
-
-    /**
-     * Format multiple proof steps
-     * @param {Array} steps - Array of proof steps
-     * @param {string} format - Output format
-     * @param {Object} startExpr - Starting expression AST
-     * @param {Object} targetExpr - Target expression AST
-     * @returns {string} Formatted proof steps
-     */
-    function formatProofSteps(steps, format, startExpr, targetExpr) {
-        if (!steps || steps.length === 0) return '';
-        
-        const lines = [];
-        
-        switch(format) {
-            case 'latex':
-                lines.push("\\[\\begin{array}{rcl}");
-                lines.push(formatAST(startExpr, format));
-                steps.forEach(step => {
-                    lines.push(formatProofStep(step, format));
-                });
-                lines.push("\\end{array}\\]");
-                break;
-                
-            case 'markdown':
-                lines.push("| Expression | Rule |");
-                lines.push("|------------|------|");
-                lines.push(`| ${formatAST(startExpr, format)} | Given |`);
-                steps.forEach(step => {
-                    const expr = formatAST(step.expression, format);
-                    const rule = getRuleDisplayName(step.rule);
-                    lines.push(`| ${expr} | ${rule} |`);
-                });
-                break;
-                
-            case 'html':
-                lines.push('<table style="white-space:nowrap;">');
-                lines.push(`<tr><td>${formatAST(startExpr, format)}</td><td></td></tr>`);
-                steps.forEach(step => {
-                    lines.push(formatProofStep(step, format));
-                });
-                lines.push('</table>');
-                break;
-                
-            default:
-                lines.push(formatAST(startExpr, format));
-                steps.forEach(step => {
-                    lines.push(formatProofStep(step, format));
-                });
-        }
-        
-        return lines.join('\n');
-    }
-
-    /**
-     * Get the equality symbol for a specific format
-     */
-    function getEqualitySymbol(format) {
-        const equality = window.ProofAssistant.Parser.getEquality();
-        return equality[format] || '=';
-    }
-
-    /**
-     * Build regex pattern for symbol matching
-     */
-    function buildSymbolRegex(symbols) {
-        if (!symbols || symbols.length === 0) return '';
-        
-        let pattern = "";
-        for(const symbol of symbols) {
-            if (symbol.text) {
-                // Escape special regex characters
-                const escaped = symbol.text.replace(/[\\\!\@\#\$\%\^\&\*\)\(\+\=\.\<\>\{\}\[\]\:\;\'\"\|\~\`\_\-]/g, '\\$&');
-                pattern += escaped + "|";
-            }
-        }
-        // Remove trailing '|'
-        return pattern.substring(0, pattern.length - 1);
-    }
-
-    /**
-     * Find symbol by key-value pair
-     */
-    function findSymbol(symbols, key, value) {
-        return symbols.find(s => s[key] === value);
+    function getRuleDisplayName(rule) {
+        return (typeof rule === 'object' && rule.text) ? rule.text : String(rule);
     }
 
     /**
      * Escape HTML special characters
      */
     function escapeHTML(str) {
-        if (typeof str !== 'string') return '';
-        
-        const htmlEscapes = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#x27;'
-        };
-        
-        return str.replace(/[&<>"']/g, match => htmlEscapes[match]);
+        const escapes = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
+        return String(str).replace(/[&<>"']/g, match => escapes[match]);
     }
 
     // Public API
     return {
-        // Main formatting functions
-        formatProof: formatProof,
-        formatAsLaTeX: formatAsLaTeX,
-        formatAsMarkdown: formatAsMarkdown,
-        formatAsHTML: formatAsHTML,
-        
-        // Conversion functions
-        convertToLaTeX: convertToLaTeX,
-        convertToMarkdown: convertToMarkdown,
-        
-        // AST formatting
-        formatAST: formatAST,
-        formatProofStep: formatProofStep,
-        formatProofSteps: formatProofSteps,
-        
-        // Utilities
-        escapeHTML: escapeHTML,
-        getEqualitySymbol: getEqualitySymbol,
-        getRuleDisplayName: getRuleDisplayName
+        formatProof,
+        convertToLaTeX,
+        convertToMarkdown,
+        escapeHTML,
+        getRuleDisplayName
     };
 })();

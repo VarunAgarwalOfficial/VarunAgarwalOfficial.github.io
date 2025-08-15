@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Equations - Proof Assistant</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Modular CSS Structure -->
+    <link href="css/base.css" rel="stylesheet">
+    <link href="css/components.css" rel="stylesheet">
+    <link href="css/pages.css" rel="stylesheet">
+    <link href="css/responsive.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main content -->
+        <div class="main-content" style="flex: 1;">
+            <!-- Header -->
+            <div class="content-header">
+                <div class="nav-links" id="nav-links" style="display: none;">
+                    <a href="index.html" class="nav-link" id="problem-sets-link" style="display: none;">
+                        <i class="fas fa-list"></i> Problem Sets
+                    </a>
+                    <a href="dashboard.html" class="nav-link" id="dashboard-link" style="display: none;">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                    <a href="equations.html" class="nav-link active" id="equations-link" style="display: none;">
+                        <i class="fas fa-calculator"></i> Custom Equations
+                    </a>
+                </div>
+                
+                <!-- Header content that will be updated by theme system -->
+                <div class="equations-page-header">
+                    <div class="d-flex align-items-center">
+                        <!-- Logo will be added here by theme system if enabled -->
+                        <div class="header-content">
+                            <h4 id="equations-title">Custom Equation Playground</h4>
+                            <p id="equations-subtitle" class="mb-0">Create and prove custom equations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content body -->
+            <div class="content-body">
+                <!-- Custom Equations Component Container -->
+                <div id="custom-equations-container" class="custom-equations-container">
+                    <!-- Custom equations interface will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal fade" id="export-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="export-modal-title">Export Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Generated Output:</label>
+                        <div class="export-content"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="copyExportContent()">
+                        <i class="fas fa-copy"></i>
+                        Copy to Clipboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript modules in dependency order -->
+    
+    <!-- Core modules -->
+    <script src="js/problems.js"></script>
+    <script src="js/core/ast.js"></script>
+    <script src="js/core/parser.js"></script>
+    <script src="js/core/theory-parser.js"></script>
+    <script src="js/core/formatter.js"></script>
+    <script src="js/core/pattern-matcher.js"></script>
+  
+    
+    <!-- Theory modules -->
+    <script src="js/theories/theory.js"></script>
+    <script src="js/theories/set_theory.js"></script>
+    <script src="js/theories/boolean_algebra.js"></script>
+    <script src="js/theories/propositional_logic.js"></script>
+    
+    <!-- Theme system - Load FIRST -->
+    <script src="js/ui/theme.js"></script>
+    
+    <!-- Component modules -->
+    <script src="js/components/proof-interface.js"></script>
+    <script src="js/components/custom-equations.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Initialize navigation based on configuration
+        function initializeNavigation() {
+            const config = window.problemsData && window.problemsData.configuration ? window.problemsData.configuration : null;
+            const navLinks = document.getElementById('nav-links');
+            const problemSetsLink = document.getElementById('problem-sets-link');
+            const dashboardLink = document.getElementById('dashboard-link');
+            const equationsLink = document.getElementById('equations-link');
+            
+            let hasAnyLinks = false;
+            
+            if (config && config.ui) {
+                // Show Problem Sets link only if sidebar is enabled
+                if (config.ui.showSidebar) {
+                    if (problemSetsLink) {
+                        problemSetsLink.style.display = 'flex';
+                        hasAnyLinks = true;
+                    }
+                }
+                
+                if (config.ui.showDashboard) {
+                    if (dashboardLink) {
+                        dashboardLink.style.display = 'flex';
+                        hasAnyLinks = true;
+                    }
+                }
+                
+                if (config.ui.showCustomEquations) {
+                    if (equationsLink) {
+                        equationsLink.style.display = 'flex';
+                        hasAnyLinks = true;
+                    }
+                }
+            }
+            
+            // Only show nav links container if we have any links to show
+            if (hasAnyLinks && navLinks) {
+                navLinks.style.display = 'flex';
+            }
+        }
+
+        // Update page titles and headers based on configuration
+        function updatePageBranding() {
+            const config = window.problemsData && window.problemsData.configuration ? window.problemsData.configuration : null;
+            
+            if (config) {
+                // Update page title
+                if (config.toolName) {
+                    document.title = `Custom Equations - ${config.toolName}`;
+                }
+                
+                // Update equations header
+                const equationsTitle = document.getElementById('equations-title');
+                const equationsSubtitle = document.getElementById('equations-subtitle');
+                
+                if (equationsTitle && config.toolName) {
+                    equationsTitle.textContent = `${config.toolName} - Custom Equations`;
+                }
+                
+                if (equationsSubtitle) {
+                    equationsSubtitle.textContent = 'Create and prove custom equations';
+                }
+                
+                // Add logo if enabled
+                if (config.showUniLogo) {
+                    addLogoToHeader();
+                }
+            }
+        }
+
+        // Add logo to equations header
+        function addLogoToHeader() {
+            const headerContent = document.querySelector('.equations-page-header .header-content');
+            const existingLogo = document.querySelector('.equations-page-header .uni-logo');
+            
+            if (headerContent && !existingLogo) {
+                const logoContainer = document.createElement('div');
+                logoContainer.className = 'd-flex align-items-center';
+                
+                const logoImg = document.createElement('img');
+                logoImg.className = 'uni-logo me-3';
+                logoImg.src = 'logo.png';
+                logoImg.alt = 'University Logo';
+                logoImg.style.height = '2.5rem';
+                logoImg.style.width = 'auto';
+                
+                // Handle logo loading errors
+                logoImg.addEventListener('error', function() {
+                    console.warn('University logo (logo.png) not found. Logo will be hidden.');
+                    logoContainer.style.display = 'none';
+                });
+                
+                logoImg.addEventListener('load', function() {
+                    logoContainer.style.display = 'flex';
+                });
+                
+                logoContainer.appendChild(logoImg);
+                logoContainer.appendChild(headerContent.cloneNode(true));
+                
+                headerContent.parentNode.replaceChild(logoContainer, headerContent);
+            }
+        }
+
+        // Custom Equations Application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize theme system FIRST
+            if (window.ProofAssistant && window.ProofAssistant.Theme) {
+                window.ProofAssistant.Theme.init();
+            }
+            
+            // Initialize navigation
+            initializeNavigation();
+            
+            // Update branding after theme is applied
+            setTimeout(updatePageBranding, 100);
+            
+            // Initialize custom equations component
+            const customEqSuccess = window.ProofAssistant.Components.CustomEquations.init('#custom-equations-container', {
+                onEquationCreated: function(equation) {
+                    console.log('Equation created:', equation);
+                },
+                onProofComplete: function(equation, steps) {
+                    const message = `Proof completed in ${steps.length} steps! Well done!`;
+                    window.ProofAssistant.Components.CustomEquations.showSuccess(message);
+                },
+                onError: function(message) {
+                    console.error('Custom Equations Error:', message);
+                },
+                onSuccess: function(message) {
+                    console.log('Custom Equations Success:', message);
+                }
+            });
+
+            if (!customEqSuccess) {
+                console.error('Failed to initialize custom equations component');
+            }
+
+            // Apply border radius to newly created elements after a delay
+            setTimeout(function() {
+                if (window.ProofAssistant && window.ProofAssistant.Theme) {
+                    window.ProofAssistant.Theme.applyBorderRadius();
+                }
+            }, 200);
+        });
+
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                event.preventDefault();
+                const saveBtn = document.getElementById('save-equation');
+                if (saveBtn && saveBtn.style.display !== 'none') {
+                    saveBtn.click();
+                }
+            }
+        });
+    </script>
+    
+</body>
+</html>

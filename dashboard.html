@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proof Problems - Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Modular CSS Structure -->
+    <link href="css/base.css" rel="stylesheet">
+    <link href="css/components.css" rel="stylesheet">
+    <link href="css/pages.css" rel="stylesheet">
+    <link href="css/responsive.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container" style="flex-direction: column;">
+        <!-- Header -->
+        <div class="content-header">
+            <div class="nav-links" id="nav-links" style="display: none;">
+                <a href="index.html" class="nav-link" id="problem-sets-link" style="display: none;">
+                    <i class="fas fa-list"></i> Problem Sets
+                </a>
+                <a href="dashboard.html" class="nav-link active" id="dashboard-link" style="display: none;">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="equations.html" class="nav-link" id="equations-link" style="display: none;">
+                    <i class="fas fa-calculator"></i> Custom Equations
+                </a>
+            </div>
+            
+            <!-- Header content that will be updated by theme system -->
+            <div class="dashboard-page-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <!-- Logo will be added here by theme system if enabled -->
+                    <div class="header-content">
+                        <h4 id="dashboard-title">Proof Problems - Dashboard</h4>
+                        <p id="dashboard-subtitle" class="mb-0">Select a problem to begin proving</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline-secondary" id="view-toggle-btn">
+                            <i class="fas fa-th-large"></i> Grid
+                        </button>
+                        <button class="btn btn-primary" id="search-btn">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="content-body" style="flex: 1;">
+            <!-- Dashboard container -->
+            <div id="dashboard-container">
+                <!-- Dashboard content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript modules -->
+    <script src="js/problems.js"></script>
+    <script src="js/core/ast.js"></script>
+    <script src="js/core/parser.js"></script>
+    <script src="js/core/theory-parser.js"></script>
+    <script src="js/core/formatter.js"></script>
+    <script src="js/core/pattern-matcher.js"></script>
+  
+    
+    <!-- Theory modules -->
+    <script src="js/theories/theory.js"></script>
+    <script src="js/theories/set_theory.js"></script>
+    <script src="js/theories/boolean_algebra.js"></script>
+    <script src="js/theories/propositional_logic.js"></script>
+    
+    <!-- Theme system - Load FIRST -->
+    <script src="js/ui/theme.js"></script>
+    
+    <!-- Components -->
+    <script src="js/components/dashboard.js"></script>
+    <script src="js/components/url-router.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Initialize navigation based on configuration
+        function initializeNavigation() {
+            const config = window.problemsData && window.problemsData.configuration ? window.problemsData.configuration : null;
+            const navLinks = document.getElementById('nav-links');
+            const problemSetsLink = document.getElementById('problem-sets-link');
+            const dashboardLink = document.getElementById('dashboard-link');
+            const equationsLink = document.getElementById('equations-link');
+            
+            let hasAnyLinks = false;
+            
+            if (config && config.ui) {
+                // Show Problem Sets link only if sidebar is enabled
+                if (config.ui.showSidebar) {
+                    if (problemSetsLink) {
+                        problemSetsLink.style.display = 'flex';
+                        hasAnyLinks = true;
+                    }
+                }
+                
+                if (config.ui.showDashboard) {
+                    if (dashboardLink) {
+                        dashboardLink.style.display = 'flex';
+                        hasAnyLinks = true;
+                    }
+                }
+                
+                if (config.ui.showCustomEquations) {
+                    if (equationsLink) {
+                        equationsLink.style.display = 'flex';
+                        hasAnyLinks = true;
+                    }
+                }
+            }
+            
+            // Only show nav links container if we have any links to show
+            if (hasAnyLinks && navLinks) {
+                navLinks.style.display = 'flex';
+            }
+        }
+
+        // Update page titles and headers based on configuration
+        function updatePageBranding() {
+            const config = window.problemsData && window.problemsData.configuration ? window.problemsData.configuration : null;
+            
+            if (config) {
+                // Update page title
+                if (config.toolName) {
+                    document.title = `${config.toolName} - Dashboard`;
+                }
+                
+                // Update dashboard header
+                const dashboardTitle = document.getElementById('dashboard-title');
+                const dashboardSubtitle = document.getElementById('dashboard-subtitle');
+                
+                if (dashboardTitle && config.courseTitle) {
+                    dashboardTitle.textContent = config.courseTitle;
+                }
+                
+                if (dashboardSubtitle && config.toolName) {
+                    dashboardSubtitle.textContent = `${config.toolName} - Select a problem to begin proving`;
+                }
+                
+                // Add logo if enabled
+                if (config.showUniLogo) {
+                    addLogoToHeader();
+                }
+            }
+        }
+
+        // Add logo to dashboard header
+        function addLogoToHeader() {
+            const headerContent = document.querySelector('.dashboard-page-header .header-content');
+            const existingLogo = document.querySelector('.dashboard-page-header .uni-logo');
+            
+            if (headerContent && !existingLogo) {
+                const logoContainer = document.createElement('div');
+                logoContainer.className = 'd-flex align-items-center';
+                
+                const logoImg = document.createElement('img');
+                logoImg.className = 'uni-logo me-3';
+                logoImg.src = 'logo.png';
+                logoImg.alt = 'University Logo';
+                logoImg.style.height = '2.5rem';
+                logoImg.style.width = 'auto';
+                
+                // Handle logo loading errors
+                logoImg.addEventListener('error', function() {
+                    console.warn('University logo (logo.png) not found. Logo will be hidden.');
+                    logoContainer.style.display = 'none';
+                });
+                
+                logoImg.addEventListener('load', function() {
+                    logoContainer.style.display = 'flex';
+                });
+                
+                logoContainer.appendChild(logoImg);
+                logoContainer.appendChild(headerContent.cloneNode(true));
+                
+                headerContent.parentNode.replaceChild(logoContainer, headerContent);
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing Dashboard...');
+            
+            // Initialize theme system FIRST - this will apply all configuration
+            if (window.ProofAssistant && window.ProofAssistant.Theme) {
+                window.ProofAssistant.Theme.init();
+            }
+            
+            // Initialize navigation
+            initializeNavigation();
+            
+            // Update branding after theme is applied
+            setTimeout(updatePageBranding, 100);
+            
+            // Initialize dashboard component
+            const dashboardSuccess = window.ProofAssistant.Components.Dashboard.init('#dashboard-container', {
+                layout: 'grid',
+                onProblemSelect: function(problem, problemId) {
+                    console.log('Selected problem:', problemId, problem);
+                }
+            });
+
+            if (!dashboardSuccess) {
+                console.error('Failed to initialize dashboard');
+                return;
+            }
+
+            // Initialize URL router
+            window.ProofAssistant.Components.URLRouter.init({
+                onProblemRouted: function(problemId) {
+                    // Navigate to problem page with the specific problem
+                    window.location.href = `index.html?problem=${problemId}`;
+                },
+                onLayoutChanged: function(layout) {
+                    console.log('Layout preference:', layout);
+                    if (layout === 'dashboard') {
+                        // Already on dashboard, set view mode
+                        window.ProofAssistant.Components.Dashboard.setViewMode('grid');
+                    }
+                }
+            });
+
+            // Load problems data
+            if (window.problemsData) {
+                window.ProofAssistant.Components.Dashboard.loadProblems(window.problemsData);
+            } else {
+                console.error('Problems data not loaded');
+            }
+
+            // Setup header action buttons
+            setupHeaderActions();
+        });
+
+        // Setup header action buttons
+        function setupHeaderActions() {
+            const viewToggleBtn = document.getElementById('view-toggle-btn');
+            const searchBtn = document.getElementById('search-btn');
+
+            if (viewToggleBtn) {
+                let currentView = 'grid';
+                viewToggleBtn.addEventListener('click', function() {
+                    currentView = currentView === 'grid' ? 'list' : 'grid';
+                    
+                    // Update button text and icon
+                    if (currentView === 'grid') {
+                        this.innerHTML = '<i class="fas fa-th-large"></i> Grid';
+                    } else {
+                        this.innerHTML = '<i class="fas fa-list"></i> List';
+                    }
+                    
+                    // Update dashboard view
+                    if (window.ProofAssistant && window.ProofAssistant.Components.Dashboard) {
+                        window.ProofAssistant.Components.Dashboard.setViewMode(currentView);
+                    }
+                });
+            }
+
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function() {
+                    // Focus on the search input in the dashboard
+                    const searchInput = document.querySelector('#search-input');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            }
+        }
+
+        // Global error handler
+        window.addEventListener('error', function(event) {
+            console.error('Global error:', event.error);
+        });
+    </script>
+</body>
+</html>

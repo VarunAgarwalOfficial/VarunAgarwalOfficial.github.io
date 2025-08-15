@@ -1,8 +1,5 @@
 /**
- * Mathematical Expression Parser
- * 
- * Handles parsing of mathematical expressions into Abstract Syntax Trees (AST)
- * Supports Boolean algebra, propositional logic, and set theory notation
+ * Expression Parser
  */
 
 window.ProofAssistant = window.ProofAssistant || {};
@@ -10,90 +7,67 @@ window.ProofAssistant = window.ProofAssistant || {};
 window.ProofAssistant.Parser = (function() {
     'use strict';
 
-    // Private state - configuration from current theory
     let symbols = [];
-    let symbol_re = "";
-    let equality = {"display": "=", "markdown": "=", "latex": "="};
+    let symbolRegex = "";
+    let equality = { display: "=", markdown: "=", latex: "=" };
     let constants = [];
     let unaryOps = [];
     let binaryOps = [];
 
     /**
-     * Initialize the parser with symbols from the current theory
+     * Initialize parser with symbols
      */
     function init() {
-        // Build regex pattern for matching all symbols
-        symbol_re = "";
-        for(let i = 0; i < symbols.length; i++){
-            // Escape special regex characters in symbol text
-            const escapedText = symbols[i]["text"].replace(/[\\\!\@\#\$\%\^\&\*\)\(\+\=\.\<\>\{\}\[\]\:\;\'\"\|\~\`\_\-]/, x=>"\\"+x);
-            symbol_re += escapedText + "|";
-        }
-        // Remove trailing '|'
-        symbol_re = symbol_re.substring(0, symbol_re.length-1);
+        symbolRegex = symbols
+            .map(s => s.text.replace(/[\\!@#$%^&*()+=.<>{}[\]:;'"|~`_-]/g, '\\$&'))
+            .join('|');
 
-        // Categorize symbols by arity (number of arguments)
-        constants = symbols.filter(sym => Math.abs(sym["arity"]) === 0);
-        unaryOps = symbols.filter(sym => Math.abs(sym["arity"]) === 1).reverse();
-        binaryOps = symbols.filter(sym => sym["arity"] === 2);
+        constants = symbols.filter(s => Math.abs(s.arity) === 0);
+        unaryOps = symbols.filter(s => Math.abs(s.arity) === 1).reverse();
+        binaryOps = symbols.filter(s => s.arity === 2);
     }
 
     /**
-     * Check for invalid characters in expression
+     * Check for invalid characters
      */
     function checkChars(str) {
-        const accepted = new RegExp(symbol_re + "|[A-Za-z()]", "g");
+        const accepted = new RegExp(symbolRegex + "|[A-Za-z()]", "g");
         return sanitize(str).replace(accepted, '');
     }
 
     /**
-     * Check if a single character is a valid leaf node (variable or constant)
+     * Check if string is a valid leaf (variable or constant)
      */
     function isLeaf(str) {
-        if(str.length !== 1) return false;
-        
-        // Accept variables (A-Z, a-z) and constants
-        let regexp = "[A-Za-z]";        
-        for (const constant of constants) {
-            regexp += "|" + constant["id"];
-        }
-        
-        return new RegExp(regexp).test(str);
+        if (str.length !== 1) return false;
+        return /[A-Za-z]/.test(str) || constants.some(c => c.id === str);
     }
 
     /**
-     * Parse expression (handles unary operators and parentheses)
+     * Parse expression segment
      */
     function parseExpression(str, i, j) {
-        // Empty string
-        if(i >= j) return null;
- 
-        // Single character - check if it's a leaf
-        if(i + 1 === j) {
-            if(isLeaf(str.substring(i, j))) {
-                return {root: str.substring(i, j), children: []};
-            }
-            return null;
+        if (i >= j) return null;
+
+        // Single character
+        if (i + 1 === j && isLeaf(str.substring(i, j))) {
+            return { root: str.substring(i, j), children: [] };
         }
 
-        // Check for unary operators
-        for(const unaryOp of unaryOps) {
-            // Prefix unary operator (like ¬)
-            if(unaryOp["arity"] === 1 && str.charAt(i) === unaryOp["id"]) {
+        // Unary operators
+        for (const op of unaryOps) {
+            if (op.arity === 1 && str.charAt(i) === op.id) {
                 const child = parseExpression(str, i + 1, j);
-                if(child === null) return null;
-                return {root: unaryOp["id"], children: [child]};
+                if (child) return { root: op.id, children: [child] };
             }
-            // Postfix unary operator (like ')
-            if(unaryOp["arity"] === -1 && str.charAt(j - 1) === unaryOp["id"]) {
+            if (op.arity === -1 && str.charAt(j - 1) === op.id) {
                 const child = parseExpression(str, i, j - 1);
-                if(child === null) return null;
-                return {root: unaryOp["id"], children: [child]};
+                if (child) return { root: op.id, children: [child] };
             }
         }
         
-        // Check for parentheses - remove outer parentheses and try again
-        if(str.charAt(i) === '(' && str.charAt(j - 1) === ')') {
+        // Remove outer parentheses
+        if (str.charAt(i) === '(' && str.charAt(j - 1) === ')') {
             return parseExpressionOrBinary(str, i + 1, j - 1);
         }
         
@@ -104,21 +78,17 @@ window.ProofAssistant.Parser = (function() {
      * Parse expression or binary operation
      */
     function parseExpressionOrBinary(str, i, j) {
-        // First try to parse as expression
-        const child = parseExpression(str, i, j);
-        if(child !== null) return child;
+        const expr = parseExpression(str, i, j);
+        if (expr) return expr;
 
-        // Try to find binary operators
-        for(let k = i + 1; k < j - 1; k++) {
-            for(const binaryOp of binaryOps) {
-                if(str.charAt(k) === binaryOp["id"]) {
-                    // Try to parse left and right sides
-                    const LHS = parseExpression(str, i, k);
-                    if(LHS !== null) {
-                        const RHS = parseExpression(str, k + 1, j);
-                        if(RHS !== null) {
-                            return {root: binaryOp["id"], children: [LHS, RHS]};
-                        }
+        // Binary operators
+        for (let k = i + 1; k < j - 1; k++) {
+            for (const op of binaryOps) {
+                if (str.charAt(k) === op.id) {
+                    const left = parseExpression(str, i, k);
+                    const right = parseExpression(str, k + 1, j);
+                    if (left && right) {
+                        return { root: op.id, children: [left, right] };
                     }
                 }
             }
@@ -127,162 +97,102 @@ window.ProofAssistant.Parser = (function() {
     }
 
     /**
-     * Main parsing function - converts string expression to AST
+     * Main parse function
      */
     function parse(str) {
-        // Check for invalid characters first
         const invalidChars = checkChars(str);
-        if(invalidChars !== "") {
-            const error = "Unexpected characters: (" + Array.from(invalidChars).join(',') + ")";
-            return [null, error];
+        if (invalidChars) {
+            return [null, "Unexpected characters: " + Array.from(invalidChars).join(',')];
         }
         
-        // Convert display symbols to internal ASCII representation
         str = toASCII(str);
         
-        // Check parentheses balance
         const balance = checkParens(str);
-        if(balance !== 0) {
-            const error = "Unmatched '" + (balance > 0 ? '(' : ')') + "'";
-            return [null, error];
+        if (balance !== 0) {
+            return [null, "Unmatched '" + (balance > 0 ? '(' : ')') + "'"];
         }
 
-        // Parse the expression into AST
         const tree = parseExpression(str, 0, str.length);
-        
-        return [tree, tree === null ? "Unable to parse expression" : ""];
+        return [tree, tree ? "" : "Unable to parse expression"];
     }
 
     /**
-     * Convert AST back to string representation
+     * Convert AST back to string
      */
-    function unparse(tree, type) {
-        if(!tree) return ["", 0];
+    function unparse(tree, type = "text") {
+        if (!tree) return ["", 0];
         
-        switch(tree.children.length) {
-            case 0: // Leaf node (variable or constant)
-                if(/[A-Za-z]/.test(tree.root)) {
-                    return [tree.root, 0]; // Variable
-                }
-                return [getSymbol("id", type, tree.root), 0]; // Constant
+        switch (tree.children.length) {
+            case 0: // Leaf
+                return /[A-Za-z]/.test(tree.root) ? 
+                    [tree.root, 0] : 
+                    [getSymbol("id", type, tree.root), 0];
 
-            case 1: // Unary operator
-                const rec = unparse(tree.children[0], type);
-                // Add parentheses if child has lower precedence
-                if(rec[1] === 2) rec[0] = "(" + rec[0] + ")";
+            case 1: // Unary
+                const [childText, childPrec] = unparse(tree.children[0], type);
+                const text = childPrec === 2 ? `(${childText})` : childText;
+                const symbolText = getSymbol("id", type, tree.root);
                 
-                // Apply unary operator (prefix or postfix)
-                if(getSymbolArity(tree.root) < 0) {
-                    rec[0] = rec[0] + getSymbol("id", type, tree.root);  // Postfix
-                } else {
-                    rec[0] = getSymbol("id", type, tree.root) + rec[0];  // Prefix
-                }
-                return [rec[0], 1];
+                return getSymbolArity(tree.root) < 0 ? 
+                    [text + symbolText, 1] : 
+                    [symbolText + text, 1];
 
-            case 2: // Binary operator
-                const lrec = unparse(tree.children[0], type);
-                if(lrec[1] === 2) lrec[0] = "(" + lrec[0] + ")";
-                const rrec = unparse(tree.children[1], type);
-                if(rrec[1] === 2) rrec[0] = "(" + rrec[0] + ")";
+            case 2: // Binary
+                const [leftText, leftPrec] = unparse(tree.children[0], type);
+                const [rightText, rightPrec] = unparse(tree.children[1], type);
+                const left = leftPrec === 2 ? `(${leftText})` : leftText;
+                const right = rightPrec === 2 ? `(${rightText})` : rightText;
                 
-                return [lrec[0] + " " + getSymbol("id", type, tree.root) + " " + rrec[0], 2];
+                return [left + " " + getSymbol("id", type, tree.root) + " " + right, 2];
         }
         return null;
     }
 
     /**
-     * Convert display symbols to internal ASCII representation
+     * Convert display symbols to ASCII
      */
     function toASCII(str) {
-        const re = new RegExp(symbol_re, "g");
+        const re = new RegExp(symbolRegex, "g");
         return sanitize(str).replace(re, txt => getSymbol("text", "id", txt));
     }
 
     /**
-     * Helper function to find symbol by key-value pair
+     * Helper functions
      */
     function getSymbol(key, val, id) {
         const found = symbols.find(s => s[key] === id);
-        return found ? found[val] : id; // Fallback to input if not found
+        return found ? found[val] : id;
     }
 
-    /**
-     * Get display text for symbol ID
-     */
-    function getSymbolText(symbol_id) {
-        return getSymbol("id", "text", symbol_id);
-    }
-    
-    /**
-     * Get arity (number of arguments) for symbol ID
-     */
-    function getSymbolArity(symbol_id) {
-        return getSymbol("id", "arity", symbol_id);
+    function getSymbolArity(id) {
+        return getSymbol("id", "arity", id);
     }
 
-    /**
-     * Sanitize input string by removing whitespace and adding outer parentheses
-     */
     function sanitize(str) {
         return "(" + str.replace(/\s/g, "") + ")";
     }
 
-    /**
-     * Check if parentheses are balanced in expression
-     */
     function checkParens(str) {
         let count = 0;
-        let i = 0;
-        while(count >= 0 && i < str.length) {
-            if(str.charAt(i) === '(') {
-                count += 1;
-            } else if(str.charAt(i) === ')') {
-                count -= 1;
-            }
-            i += 1;
+        for (let i = 0; i < str.length && count >= 0; i++) {
+            if (str.charAt(i) === '(') count++;
+            else if (str.charAt(i) === ')') count--;
         }
         return count;
     }
 
-    // Configuration functions
-    function setSymbols(newSymbols) {
-        symbols = newSymbols || [];
-    }
-
-    function setEquality(newEquality) {
-        equality = newEquality || {"display": "=", "markdown": "=", "latex": "="};
-    }
-
-    // Getters
-    function getSymbols() { return symbols; }
-    function getEquality() { return equality; }
-    function getConstants() { return constants; }
-    function getUnaryOps() { return unaryOps; }
-    function getBinaryOps() { return binaryOps; }
+    // Configuration
+    function setSymbols(newSymbols) { symbols = newSymbols || []; }
+    function setEquality(newEquality) { equality = newEquality || equality; }
 
     // Public API
     return {
-        // Core functions
-        init: init,
-        parse: parse,
-        unparse: unparse,
-        
-        // Utility functions
-        checkChars: checkChars,
-        toASCII: toASCII,
-        getSymbol: getSymbol,
-        getSymbolText: getSymbolText,
-        getSymbolArity: getSymbolArity,
-        
-        // Configuration
-        setSymbols: setSymbols,
-        setEquality: setEquality,
-        
-        // Getters
-        getSymbols: getSymbols,
-        getEquality: getEquality,
-        getConstants: getConstants,
-        getUnaryOps: getUnaryOps,
-        getBinaryOps: getBinaryOps
+        init,
+        parse,
+        unparse,
+        setSymbols,
+        setEquality,
+        getSymbols: () => symbols,
+        getEquality: () => equality
     };
 })();

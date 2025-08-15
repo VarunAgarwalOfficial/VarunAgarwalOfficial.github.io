@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proof Assistant Configurator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="setup.css">
+</head>
+<body>
+    <div class="container-main">
+        <div class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-graduation-cap"></i> Proof Assistant Configurator</h1>
+                <p>Configuration tool for creating custom proof problems</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Statistics Overview -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-problems">0</div>
+                    <div class="stat-label">Total Problems</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-theories">3</div>
+                    <div class="stat-label">Available Theories</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-weeks">0</div>
+                    <div class="stat-label">Weeks Covered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-custom-laws">0</div>
+                    <div class="stat-label">Custom Laws</div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showTab('general')">
+                    <i class="fas fa-info-circle"></i> General
+                </button>
+                <button class="tab-btn" onclick="showTab('theme')">
+                    <i class="fas fa-palette"></i> Theme
+                </button>
+                <button class="tab-btn" onclick="showTab('layout')">
+                    <i class="fas fa-layout"></i> Layout
+                </button>
+                <button class="tab-btn" onclick="showTab('problems')">
+                    <i class="fas fa-tasks"></i> Problems
+                </button>
+                <button class="tab-btn" onclick="showTab('preview')">
+                    <i class="fas fa-eye"></i> Preview
+                </button>
+            </div>
+
+            <!-- General Configuration Tab -->
+            <div id="general-tab" class="tab-content active">
+                <div class="section">
+                    <h3><i class="fas fa-university"></i> Course & Tool Information</h3>
+                    <div class="form-group">
+                        <label for="course-title">Course Title:</label>
+                        <input type="text" id="course-title" placeholder="e.g., Foundations of Computer Science" value="Foundations of Computer Science">
+                    </div>
+                    <div class="form-group">
+                        <label for="tool-name">Tool Name:</label>
+                        <input type="text" id="tool-name" placeholder="e.g., Proof Assistant" value="Proof Assistant">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3><i class="fas fa-paint-brush"></i> Branding & Visual Settings</h3>
+                    <div class="config-checkbox">
+                        <input type="checkbox" id="show-uni-logo" checked>
+                        <label for="show-uni-logo">Show University Logo (requires logo.png file)</label>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="border-radius">Border Radius:</label>
+                        <div class="slider-group">
+                            <input type="range" id="border-radius" min="0" max="25" value="8" step="1">
+                            <div class="slider-value" id="border-radius-value">8px</div>
+                        </div>
+                        <small style="color: #666;">Controls the roundness of corners throughout the interface</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme Tab -->
+            <div id="theme-tab" class="tab-content">
+                <div class="section">
+                    <h3><i class="fas fa-palette"></i> Color Palette</h3>
+                    <div class="color-group">
+                        <input type="color" class="color-input" id="primary-color" value="#FFC500">
+                        <span class="color-label">Primary Color</span>
+                        <span class="color-hex" id="primary-hex">#FFC500</span>
+                    </div>
+                    <div class="color-group">
+                        <input type="color" class="color-input" id="secondary-color" value="#522E92">
+                        <span class="color-label">Secondary Color</span>
+                        <span class="color-hex" id="secondary-hex">#522E92</span>
+                    </div>
+                    <div class="color-group">
+                        <input type="color" class="color-input" id="accent-color" value="#FF6F00">
+                        <span class="color-label">Accent Color</span>
+                        <span class="color-hex" id="accent-hex">#FF6F00</span>
+                    </div>
+                    <div class="color-group">
+                        <input type="color" class="color-input" id="bg-color" value="#ffffff">
+                        <span class="color-label">Background Color</span>
+                        <span class="color-hex" id="bg-hex">#ffffff</span>
+                    </div>
+                    <div class="color-group">
+                        <input type="color" class="color-input" id="text-color" value="#333333">
+                        <span class="color-label">Text Color</span>
+                        <span class="color-hex" id="text-hex">#333333</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3><i class="fas fa-star"></i> Preset Themes</h3>
+                    <p class="small-text mb-3">Choose from curated themes designed for academic environments</p>
+                    <div class="preset-themes" id="theme-container"></div>
+                </div>
+            </div>
+
+            <!-- Layout Tab -->
+            <div id="layout-tab" class="tab-content">
+                <div class="section">
+                    <h3><i class="fas fa-cogs"></i> UI Configuration</h3>
+                    <p class="small-text mb-3">Configure which interface components are available to students</p>
+                    <div class="config-checkbox">
+                        <input type="checkbox" id="show-sidebar" checked>
+                        <label for="show-sidebar">Show Sidebar Navigation (recommended for problem sets)</label>
+                    </div>
+                    <div class="config-checkbox">
+                        <input type="checkbox" id="show-dashboard" checked>
+                        <label for="show-dashboard">Enable Dashboard View (grid overview of all problems)</label>
+                    </div>
+                    <div class="config-checkbox">
+                        <input type="checkbox" id="show-custom" checked>
+                        <label for="show-custom">Enable Custom Equations (allows students to create their own problems)</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Problems Tab -->
+            <div id="problems-tab" class="tab-content">
+                <div class="section">
+                    <h3><i class="fas fa-plus-circle"></i> <span id="form-title">Add New Problem</span></h3>
+                    <div id="edit-mode-indicator" class="edit-mode-indicator" style="display: none;">
+                        <i class="fas fa-edit"></i>
+                        <span>Editing Problem: <span id="editing-problem-id"></span></span>
+                        <button class="btn-custom btn-danger-custom" onclick="cancelEdit()" style="margin-left: auto;">
+                            <i class="fas fa-times"></i> Cancel Edit
+                        </button>
+                    </div>
+                    <div class="problem-form">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label>Week</label>
+                                <input type="number" class="form-control" id="week" value="2" min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Problem Number</label>
+                                <input type="number" class="form-control" id="number" value="1" min="1">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label>Problem Name</label>
+                            <input type="text" class="form-control" id="name" placeholder="e.g., Idempotence of Union">
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Description</label>
+                            <textarea class="form-control" id="description" rows="2" placeholder="Prove this equality using set theory laws..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Theory</label>
+                            <div class="theory-select">
+                                <div class="theory-option selected" data-theory="set_theory" onclick="selectTheory(this)" style="--theory-color: #2E7D32;">
+                                    <div class="theory-icon"><i class="fas fa-circle"></i></div>
+                                    <strong>Set Theory</strong><br>
+                                    <small>∪, ∩, ∅, complement</small>
+                                </div>
+                                <div class="theory-option" data-theory="bool_alg" onclick="selectTheory(this)" style="--theory-color: #F57C00;">
+                                    <div class="theory-icon"><i class="fas fa-square"></i></div>
+                                    <strong>Boolean Algebra</strong><br>
+                                    <small>∨, ∧, ¬, 0, 1</small>
+                                </div>
+                                <div class="theory-option" data-theory="prop_logic" onclick="selectTheory(this)" style="--theory-color: #1976D2;">
+                                    <div class="theory-icon"><i class="fas fa-arrow-right"></i></div>
+                                    <strong>Propositional Logic</strong><br>
+                                    <small>→, ↔, ⊥, ⊤</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Equation</label>
+                            <div class="equation-builder">
+                                <input type="text" class="equation-input" id="lhs" placeholder="Left side of equation">
+                                <span class="equation-equals">=</span>
+                                <input type="text" class="equation-input" id="rhs" placeholder="Right side of equation">
+                            </div>
+                            <div class="symbols" id="symbols"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Hints (Optional)</label>
+                            <div class="hint-input-group">
+                                <input type="text" class="form-control" id="hint-input" placeholder="Enter a helpful hint for students">
+                                <button class="btn-custom btn-success-custom" onclick="addHint()">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </div>
+                            <div class="hint-list" id="hints" style="display:none"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Available Rules</label>
+                            <p class="small-text">Choose which rules students can use for this problem</p>
+                            <div style="background: var(--light-bg); padding: 20px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--border);">
+                                <div style="margin-bottom: 15px;">
+                                    <button class="btn-custom btn-success-custom" onclick="selectAllRules()" style="margin-right: 10px; font-size: 0.8rem; padding: 8px 16px;">
+                                        <i class="fas fa-check-double"></i> Select All
+                                    </button>
+                                    <button class="btn-custom btn-danger-custom" onclick="deselectAllRules()" style="font-size: 0.8rem; padding: 8px 16px;">
+                                        <i class="fas fa-times"></i> Deselect All
+                                    </button>
+                                </div>
+                                <div id="rules-selector" style="max-height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: white;">
+                                    <!-- Rules will be populated based on selected theory -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Problem-Specific Custom Laws</label>
+                            <p class="small-text">Add custom laws that apply only to this specific problem</p>
+                            <div class="custom-laws-section">
+                                <div class="custom-law-input-group">
+                                    <input type="text" class="form-control" id="problem-law-name" placeholder="Law name (e.g., Absorption)">
+                                    <input type="text" class="form-control" id="problem-law-lhs" placeholder="LHS">
+                                    <input type="text" class="form-control" id="problem-law-rhs" placeholder="RHS">
+                                    <button class="btn-custom btn-success-custom" onclick="addProblemCustomLaw()">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                                <div id="problem-custom-laws" class="small-text">No problem-specific laws defined</div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button id="problem-action-btn" class="btn-custom btn-primary-custom" onclick="addProblem()">
+                                <i class="fas fa-plus-circle"></i> Add Problem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3><i class="fas fa-list"></i> Current Problems</h3>
+                    <div id="problems-list"></div>
+                </div>
+            </div>
+
+            <!-- Preview Tab -->
+            <div id="preview-tab" class="tab-content">
+                <div class="section">
+                    <h3><i class="fas fa-code"></i> Configuration Preview</h3>
+                    <p class="small-text mb-3">This is the generated problems.js file that will be used by your proof assistant</p>
+                    <div class="preview-box" id="preview"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <div>
+                <button class="btn-custom btn-warning-custom" onclick="loadFile()">
+                    <i class="fas fa-upload"></i> Load Existing Configuration
+                </button>
+                <input type="file" id="file-input" accept=".js,.json" style="display: none;" onchange="handleFileLoad(event)">
+            </div>
+            <div>
+                <button class="btn-custom btn-success-custom" onclick="exportAsJson()">
+                    <i class="fas fa-download"></i> Export as JSON
+                </button>
+                <button class="btn-custom btn-primary-custom" onclick="generateFile()">
+                    <i class="fas fa-file-code"></i> Generate problems.js
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="status" id="status"></div>  
+    <script src= "setup.js"></script>
+
+</body>
+</html>
