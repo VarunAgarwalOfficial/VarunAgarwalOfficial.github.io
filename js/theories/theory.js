@@ -37,6 +37,7 @@ window.ProofAssistant.Theory = (function() {
         function compileRules() {
             compiledRules = {};
             
+            console.log('Compiling rules for theory:', info.name);
             // Always compile built-in rules
             rules.forEach(rule => {
                 const [lhsAST, lhsError] = parser.parse(rule.LHS);
@@ -49,7 +50,7 @@ window.ProofAssistant.Theory = (function() {
                         definition: rule,
                         isCustom: false,
                         isProblemSpecific: false,
-                        level: rule.level || 0
+                        level: rule.level || 99
                     };
                 } else {
                     console.error(`Error compiling rule ${rule.name}:`, lhsError || rhsError);

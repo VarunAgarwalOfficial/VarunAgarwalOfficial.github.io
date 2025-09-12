@@ -190,69 +190,72 @@ window.ProofAssistant.Components.ProofInterface = (function() {
     /**
      * Setup rules dropdown
      */
-/**
- * Setup rules dropdown - Modified to use visual separators instead of text labels
- */
-function setupRules() {
-    const select = state.container.querySelector('#rule-select');
-    if (!select || !state.theory) return;
+    function setupRules() {
+        const select = state.container.querySelector('#rule-select');
+        if (!select || !state.theory) return;
 
-    select.innerHTML = '<option value="">Select a rule...</option>';
-    
-    const rules = state.theory.getAllAvailableRules ? 
-        state.theory.getAllAvailableRules() : state.theory.rules;
+        select.innerHTML = '<option value="">Select a rule...</option>';
         
-    // Apply filters if specified
-    let filtered = rules;
-    if (state.problem?.enabledRules) {
-        filtered = rules.filter(r => 
-            state.problem.enabledRules.includes(r.name) ||
-            state.problem.enabledRules.includes(r.name.split('_')[0])
-        );
-    } else if (state.problem?.disabledRules) {
-        filtered = rules.filter(r => !state.problem.disabledRules.includes(r.name));
-    }
-
-    // Group by level
-    const groups = {
-        0: { label: '', rules: [] },    // Empty separator
-        1: { label: '', rules: [] },    // Empty separator  
-        2: { label: '', rules: [] },    // Empty separator
-        99: { label: '', rules: [] }    // Empty separator
-    };
-
-    filtered.forEach(rule => {
-        const level = rule.level || 0;
-        const group = groups[level] || groups[2];
-        group.rules.push(rule);
-    });
-
-    let firstGroup = true;
-    Object.values(groups).forEach(group => {
-        if (group.rules.length === 0) return;
-        
-        // Add visual separator before each group (except the first)
-        if (!firstGroup) {
-            const separator = document.createElement('option');
-            separator.disabled = true;
-            separator.textContent = '_'.repeat(40);
-            separator.style.textAlign = 'center';
-            separator.style.color = '#ccc';
-            select.appendChild(separator);
+        const rules = state.theory.getAllAvailableRules ? 
+            state.theory.getAllAvailableRules() : state.theory.rules;
+            
+        // Apply filters if specified
+        let filtered = rules;
+        if (state.problem?.enabledRules) {
+            filtered = rules.filter(r => {
+                // Always include custom laws and problem-specific rules
+                if (r.isCustom) {
+                    return true;
+                }
+                
+                // Check if rule name or base name is in enabled list
+                return state.problem.enabledRules.includes(r.name) ||
+                    state.problem.enabledRules.includes(r.name.split('_')[0]);
+            });
+        } else if (state.problem?.disabledRules) {
+            filtered = rules.filter(r => !state.problem.disabledRules.includes(r.name));
         }
-        firstGroup = false;
-        
-        group.rules.forEach(rule => {
-            const option = document.createElement('option');
-            option.value = rule.name;
-            option.textContent = rule.text || rule.name;
-            if (rule.LHS && rule.RHS) {
-                option.textContent += `: ${rule.LHS} = ${rule.RHS}`;
-            }
-            select.appendChild(option);
+
+        // Group by level
+        const groups = {
+            0: { label: '', rules: [] },    // Empty separator
+            1: { label: '', rules: [] },    // Empty separator  
+            2: { label: '', rules: [] },    // Empty separator
+            99: { label: '', rules: [] }    // Empty separator (custom laws)
+        };
+
+        filtered.forEach(rule => {
+            const level = rule.level || 0;
+            const group = groups[level] || groups[2];
+            group.rules.push(rule);
         });
-    });
-}
+
+        let firstGroup = true;
+        Object.values(groups).forEach(group => {
+            if (group.rules.length === 0) return;
+            
+            // Add visual separator before each group (except the first)
+            if (!firstGroup) {
+                const separator = document.createElement('option');
+                separator.disabled = true;
+                separator.textContent = '_'.repeat(40);
+                separator.style.textAlign = 'center';
+                separator.style.color = '#ccc';
+                select.appendChild(separator);
+            }
+            firstGroup = false;
+            
+            group.rules.forEach(rule => {
+                const option = document.createElement('option');
+                option.value = rule.name;
+                option.textContent = rule.text || rule.name;
+                if (rule.LHS && rule.RHS) {
+                    option.textContent += `: ${rule.LHS} = ${rule.RHS}`;
+                }
+                select.appendChild(option);
+            });
+        });
+    }
 
     /**
      * Validate step
