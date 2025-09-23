@@ -248,38 +248,39 @@ window.ProofAssistant.Components.CustomEquations = (function() {
     }
 
     /**
-     * Load a theory
+     * Load theory 
      */
     function loadTheory(theoryName) {
         try {
-            let theory = null;
-            switch(theoryName) {
-                case 'set_theory':
-                    theory = window.ProofAssistant.Theories.SetTheory;
-                    break;
-                case 'bool_alg':
-                    theory = window.ProofAssistant.Theories.BooleanAlgebra;
-                    break;
-                case 'prop_logic':
-                    theory = window.ProofAssistant.Theories.PropositionalLogic;
-                    break;
-                default:
-                    throw new Error(`Unknown theory: ${theoryName}`);
+            // Validate theory name
+            if (!theoryName || typeof theoryName !== 'string') {
+                throw new Error('Invalid theory name');
             }
+            
+            const theories = {
+                'set_theory': window.ProofAssistant.Theories.SetTheory,
+                'bool_alg': window.ProofAssistant.Theories.BooleanAlgebra,
+                'prop_logic': window.ProofAssistant.Theories.PropositionalLogic
+            };
 
+            const theory = theories[theoryName];
             if (!theory) {
-                throw new Error(`Theory ${theoryName} not available`);
+                throw new Error(`Theory '${theoryName}' not available`);
             }
 
-            // Initialize global parser for the UI
-            window.ProofAssistant.Parser.setSymbols(theory.symbols);
-            window.ProofAssistant.Parser.setEquality(theory.equality);
-            window.ProofAssistant.Parser.init();
+            // Validate theory structure - each theory should have its own parser
+            if (!theory.symbols || !theory.equality || !theory.parser) {
+                throw new Error(`Theory '${theoryName}' has invalid structure`);
+            }
 
-            currentTheory = theory;
+            // Store the theory (it already has its own isolated parser)
+            state.theory = theory;
+            
             return true;
+            
         } catch (error) {
-            callbacks.onError('Failed to load theory: ' + error.message);
+            console.error('UI: Theory loading failed:', error);
+            showMessage(`Failed to load theory: ${error.message}`, 'error');
             return false;
         }
     }
@@ -386,14 +387,14 @@ window.ProofAssistant.Components.CustomEquations = (function() {
 
         clearMessages();
 
-        const [lhsAST, lhsError] = window.ProofAssistant.Parser.parse(removeSpaces(lhs));
+        const [lhsAST, lhsError] = state.theory.Parser.parse(removeSpaces(lhs));
         if (lhsError) {
             callbacks.onError(`Error parsing LHS: ${lhsError}`);
             lhsInput.focus();
             return;
         }
 
-        const [rhsAST, rhsError] = window.ProofAssistant.Parser.parse(removeSpaces(rhs));
+        const [rhsAST, rhsError] = state.theory.parser.parse(removeSpaces(rhs));
         if (rhsError) {
             callbacks.onError(`Error parsing RHS: ${rhsError}`);
             rhsInput.focus();
@@ -427,14 +428,14 @@ window.ProofAssistant.Components.CustomEquations = (function() {
 
         clearMessages();
 
-        const [lhsAST, lhsError] = window.ProofAssistant.Parser.parse(removeSpaces(lhs));
+        const [lhsAST, lhsError] = state.theory.parser.parse(removeSpaces(lhs));
         if (lhsError) {
             callbacks.onError(`Error parsing LHS: ${lhsError}`);
             lhsInput.focus();
             return;
         }
 
-        const [rhsAST, rhsError] = window.ProofAssistant.Parser.parse(removeSpaces(rhs));
+        const [rhsAST, rhsError] = state.theory.parser.parse(removeSpaces(rhs));
         if (rhsError) {
             callbacks.onError(`Error parsing RHS: ${rhsError}`);
             rhsInput.focus();
@@ -518,7 +519,7 @@ window.ProofAssistant.Components.CustomEquations = (function() {
      */
     function handleExport(format, content) {
         try {
-            const formatted = window.ProofAssistant.Formatter.formatProof(format, content, window.ProofAssistant.Parser);
+            const formatted = window.ProofAssistant.Formatter.formatProof(format, content, state.theory.parser);
             
             if (!formatted || formatted.startsWith('Format not supported')) {
                 callbacks.onError(`Export format "${format}" is not supported`);

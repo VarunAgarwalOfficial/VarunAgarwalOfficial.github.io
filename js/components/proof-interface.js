@@ -322,8 +322,8 @@ window.ProofAssistant.Components.ProofInterface = (function() {
         const final = state.steps[state.steps.length - 1].expression.replace(/\s/g, '');
         const target = state.problem.RHS.replace(/\s/g, '');
         
-        const [finalAST] = window.ProofAssistant.Parser.parse(final);
-        const [targetAST] = window.ProofAssistant.Parser.parse(target);
+        const [finalAST] = state.theory.parser.parse(final);
+        const [targetAST] = state.theory.parser.parse(target);
         
         if (finalAST && targetAST && window.ProofAssistant.AST.equals(finalAST, targetAST)) {
             completeProof();

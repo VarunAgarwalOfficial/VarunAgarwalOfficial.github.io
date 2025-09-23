@@ -88,7 +88,6 @@ window.ProofAssistant.Main = (function() {
         const required = [
             { path: 'window.problemsData', name: 'Problems Data' },
             { path: 'window.ProofAssistant.AST', name: 'AST Module' },
-            { path: 'window.ProofAssistant.Parser', name: 'Parser Module' },
             { path: 'window.ProofAssistant.Formatter', name: 'Formatter Module' },
             { path: 'window.ProofAssistant.UI', name: 'UI Module' },
             { path: 'window.ProofAssistant.Components.ProofInterface', name: 'Proof Interface' }

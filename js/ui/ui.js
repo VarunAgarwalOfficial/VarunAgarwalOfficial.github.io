@@ -56,7 +56,6 @@ window.ProofAssistant.UI = (function() {
     function validateDependencies() {
         const required = [
             'window.problemsData',
-            'window.ProofAssistant.Parser',
             'window.ProofAssistant.Components.ProofInterface'
         ];
         
@@ -301,12 +300,10 @@ window.ProofAssistant.UI = (function() {
     }
 
     /**
-     * Load theory with comprehensive error handling
+     * Load theory
      */
     function loadTheory(theoryName) {
         try {
-            
-            
             // Validate theory name
             if (!theoryName || typeof theoryName !== 'string') {
                 throw new Error('Invalid theory name');
@@ -323,22 +320,13 @@ window.ProofAssistant.UI = (function() {
                 throw new Error(`Theory '${theoryName}' not available`);
             }
 
-            // Validate theory structure
+            // Validate theory structure - each theory should have its own parser
             if (!theory.symbols || !theory.equality || !theory.parser) {
                 throw new Error(`Theory '${theoryName}' has invalid structure`);
             }
 
+            // Store the theory (it already has its own isolated parser)
             state.theory = theory;
-
-            // Initialize global parser
-            if (!window.ProofAssistant.Parser) {
-                throw new Error('Global parser not available');
-            }
-
-            window.ProofAssistant.Parser.setSymbols(theory.symbols);
-            window.ProofAssistant.Parser.setEquality(theory.equality);
-            window.ProofAssistant.Parser.init();
-
             
             return true;
             
@@ -348,7 +336,6 @@ window.ProofAssistant.UI = (function() {
             return false;
         }
     }
-
     /**
      * Set current problem with validation
      */
@@ -488,7 +475,7 @@ window.ProofAssistant.UI = (function() {
 
     function handleExport(format, content) {
         try {
-            const parser = window.ProofAssistant.Parser;
+            const parser = state.theory.parser;
             if (!parser) {
                 showMessage('Parser not available', 'error');
                 return;

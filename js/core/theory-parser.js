@@ -170,36 +170,16 @@ window.ProofAssistant.ParserFactory = (function() {
                 if(/[A-Za-z]/.test(char)) {
                     return { root: char, children: [] };
                 }
-                // Check if it's a constant
                 if(constants.find(c => c.id === char)) {
                     return { root: char, children: [] };
                 }
                 return null;
             }
 
-            // Check for unary operators (prefix and postfix)
-            for(const op of unaryOps) {
-                // Postfix operator (negative arity)
-                if(op.arity < 0 && str.charAt(r-1) === op.id) {
-                    const child = parseExpression(str, l, r-1);
-                    if(child) {
-                        return { root: op.id, children: [child] };
-                    }
-                }
-                // Prefix operator
-                else if(op.arity > 0 && str.charAt(l) === op.id) {
-                    const child = parseExpression(str, l+1, r);
-                    if(child) {
-                        return { root: op.id, children: [child] };
-                    }
-                }
-            }
-
-            // Check for binary operators
+            // Check for binary operators FIRST (at depth 0)
             let depth = 0;
             let operatorsAtDepthZero = [];
 
-            // First pass: find ALL operators at depth 0
             for(let i = l; i < r; i++) {
                 const char = str.charAt(i);
                 if(char === '(') depth++;
@@ -212,12 +192,12 @@ window.ProofAssistant.ParserFactory = (function() {
                 }
             }
 
-            // If there are multiple operators at depth 0, the expression is ambiguous
+            // If there are multiple operators at depth 0, reject (ambiguous)
             if(operatorsAtDepthZero.length > 1) {
-                return null; // Reject expressions like "A ∩ B ∩ C"
+                return null;
             }
 
-            // If there's exactly one operator, try to parse with it
+            // If there's exactly one binary operator, parse with it
             if(operatorsAtDepthZero.length === 1) {
                 const {pos, op} = operatorsAtDepthZero[0];
                 const left = parseExpression(str, l, pos);
@@ -227,9 +207,31 @@ window.ProofAssistant.ParserFactory = (function() {
                 }
             }
 
+            // Check for unary operators
+            for(const op of unaryOps) {
+                // Postfix operator - IMPROVED to handle precedence correctly
+                if(op.arity < 0 && str.charAt(r-1) === op.id) {
+                    // Strategy: only apply if no binary operators are present
+                    // This ensures proper precedence: A∩Bᶜ = A∩(Bᶜ) not (A∩B)ᶜ
+                    if(operatorsAtDepthZero.length === 0) {
+                        const operand = parseExpression(str, l, r-1);
+                        if(operand) {
+                            return { root: op.id, children: [operand] };
+                        }
+                    }
+                }
+                
+                // Prefix operator
+                else if(op.arity > 0 && str.charAt(l) === op.id) {
+                    const child = parseExpression(str, l+1, r);
+                    if(child) {
+                        return { root: op.id, children: [child] };
+                    }
+                }
+            }
+
             return null;
         }
-
         /**
          * Convert AST back to string representation
          */
