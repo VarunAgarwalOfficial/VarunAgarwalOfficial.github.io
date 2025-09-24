@@ -23,32 +23,32 @@ window.ProofAssistant.Theories.PropositionalLogic = window.ProofAssistant.Theory
     equality: {"display": "≡", "markdown": "≡", "latex": "\\equiv"},
     rules: [
         // Level 0 - Basic Laws
-        {"name": "assoc_or", "text": "Associativity of OR", "LHS": "(p ∨ q) ∨ r", "RHS": "p ∨ (q ∨ r)", "level": 0},
-        {"name": "assoc_and", "text": "Associativity of AND", "LHS": "(p ∧ q) ∧ r", "RHS": "p ∧ (q ∧ r)", "level": 0},
-        {"name": "comm_or", "text": "Commutatitivity of OR", "LHS": "p ∨ q", "RHS": "q ∨ p", "level": 0},
-        {"name": "comm_and", "text": "Commutatitivity of AND", "LHS": "p ∧ q", "RHS": "q ∧ p", "level": 0},
-        {"name": "dist_and_or", "text": "Distributivity of AND over OR", "LHS": "p ∧ (q ∨ r)", "RHS": "(p ∧ q) ∨ (p ∧ r)", "level": 0},
-        {"name": "dist_or_and", "text": "Distributivity of OR over AND", "LHS": "p ∨ (q ∧ r)", "RHS": "(p ∨ q) ∧ (p ∨ r)", "level": 0},
-        {"name": "id_or", "text": "Identity of OR", "LHS": "p ∨ ⊥", "RHS": "p", "level": 0},
-        {"name": "id_and", "text": "Identity of AND", "LHS": "p ∧ ⊤", "RHS": "p", "level": 0},
-        {"name": "comp_or", "text": "Complement with OR", "LHS": "p ∨ ¬p", "RHS": "⊤", "level": 0},
-        {"name": "comp_and", "text": "Complement with AND", "LHS": "p ∧ ¬p", "RHS": "⊥", "level": 0},
+        {"name": "assoc_or", "text": "Associativity of ∨", "LHS": "(p ∨ q) ∨ r", "RHS": "p ∨ (q ∨ r)", "level": 0},
+        {"name": "assoc_and", "text": "Associativity of ∧", "LHS": "(p ∧ q) ∧ r", "RHS": "p ∧ (q ∧ r)", "level": 0},
+        {"name": "comm_or", "text": "Commutatitivity of ∨", "LHS": "p ∨ q", "RHS": "q ∨ p", "level": 0},
+        {"name": "comm_and", "text": "Commutatitivity of ∧", "LHS": "p ∧ q", "RHS": "q ∧ p", "level": 0},
+        {"name": "dist_and_or", "text": "Distributivity of ∧ over ∨", "LHS": "p ∧ (q ∨ r)", "RHS": "(p ∧ q) ∨ (p ∧ r)", "level": 0},
+        {"name": "dist_or_and", "text": "Distributivity of ∨ over ∧", "LHS": "p ∨ (q ∧ r)", "RHS": "(p ∨ q) ∧ (p ∨ r)", "level": 0},
+        {"name": "id_or", "text": "Identity of ∨", "LHS": "p ∨ ⊥", "RHS": "p", "level": 0},
+        {"name": "id_and", "text": "Identity of ∧", "LHS": "p ∧ ⊤", "RHS": "p", "level": 0},
+        {"name": "comp_or", "text": "Complement with ∨", "LHS": "p ∨ ¬p", "RHS": "⊤", "level": 0},
+        {"name": "comp_and", "text": "Complement with ∧", "LHS": "p ∧ ¬p", "RHS": "⊥", "level": 0},
         
         // Level 1 - Definitions
-        {"name": "impl_def", "text": "Definition of Implication", "LHS": "p → q", "RHS": "¬p ∨ q", "level": 1},
-        {"name": "bicond_def", "text": "Definition of Bi-implication", "LHS": "p ↔ q", "RHS": "(p → q) ∧ (q → p)", "level": 1},
+        {"name": "impl_def", "text": "Implication definition", "LHS": "p → q", "RHS": "¬p ∨ q", "level": 1},
+        {"name": "bicond_def", "text": "Biconditional definition", "LHS": "p ↔ q", "RHS": "(p → q) ∧ (q → p)", "level": 1},
         
         // Level 2 - Derived Laws
-        {"name": "idem_or", "text": "Idempotence of OR", "LHS": "p ∨ p", "RHS": "p", "level": 2},
-        {"name": "idem_and", "text": "Idempotence of AND", "LHS": "p ∧ p", "RHS": "p", "level": 2},
+        {"name": "idem_or", "text": "Idempotence of ∨", "LHS": "p ∨ p", "RHS": "p", "level": 2},
+        {"name": "idem_and", "text": "Idempotence of ∧", "LHS": "p ∧ p", "RHS": "p", "level": 2},
         {"name": "dbl_neg", "text": "Double negation", "LHS": "¬¬p", "RHS": "p", "level": 2},
-        {"name": "ann_or", "text": "Annihilation of OR", "LHS": "p ∨ ⊤", "RHS": "⊤", "level": 2},
-        {"name": "ann_and", "text": "Annihilation of AND", "LHS": "p ∧ ⊥", "RHS": "⊥", "level": 2},
-        {"name": "dem_or", "text": "De Morgan's, ¬ over OR", "LHS": "¬(p ∨ q)", "RHS": "¬p ∧ ¬q", "level": 2},
-        {"name": "dem_and", "text": "De Morgan's, ¬ over AND", "LHS": "¬(p ∧ q)", "RHS": "¬p ∨ ¬q", "level": 2},
+        {"name": "ann_or", "text": "Annihilation of ∨", "LHS": "p ∨ ⊤", "RHS": "⊤", "level": 2},
+        {"name": "ann_and", "text": "Annihilation of ∧", "LHS": "p ∧ ⊥", "RHS": "⊥", "level": 2},
+        {"name": "dem_or", "text": "De Morgan's, ¬ over ∨", "LHS": "¬(p ∨ q)", "RHS": "¬p ∧ ¬q", "level": 2},
+        {"name": "dem_and", "text": "De Morgan's, ¬ over ∧", "LHS": "¬(p ∧ q)", "RHS": "¬p ∨ ¬q", "level": 2},
         {"name": "comp_false", "text": "Complement of ⊥", "LHS": "¬⊥", "RHS": "⊤", "level": 2},
         {"name": "comp_true", "text": "Complement of ⊤", "LHS": "¬⊤", "RHS": "⊥", "level": 2},
-        {"name": "abs_and_or", "text": "Absorption of AND over OR", "LHS": "p ∧ (p ∨ q)", "RHS": "p", "level": 2},
-        {"name": "abs_or_and", "text": "Absorption of OR over AND", "LHS": "p ∨ (p ∧ q)", "RHS": "p", "level": 2}
+        {"name": "abs_and_or", "text": "Absorption of ∧ over ∨", "LHS": "p ∧ (p ∨ q)", "RHS": "p", "level": 2},
+        {"name": "abs_or_and", "text": "Absorption of ∨ over ∧", "LHS": "p ∨ (p ∧ q)", "RHS": "p", "level": 2}
     ]
 });

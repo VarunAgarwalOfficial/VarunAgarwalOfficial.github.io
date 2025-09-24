@@ -41,6 +41,14 @@ window.ProofAssistant.Theories.SetTheory = window.ProofAssistant.Theory.createTh
         // Level 2 - Derived Laws
         {"name": "idem1", "text": "Idempotence of Union", "LHS": "x ∪ x", "RHS": "x", "level": 2},
         {"name": "idem2", "text": "Idempotence of Intersection", "LHS": "x ∩ x", "RHS": "x", "level": 2},
-        {"name": "dblc", "text": "Double complement", "LHS": "xᶜᶜ", "RHS": "x", "level": 2}
+        {"name": "dblc", "text": "Double complement", "LHS": "xᶜᶜ", "RHS": "x", "level": 2},
+        {"name": "dem1", "text": "De Morgan's, ᶜ over ∪", "LHS": "(x ∪ y)ᶜ", "RHS": "xᶜ ∩ yᶜ", "level": 2},
+        {"name": "dem2", "text": "De Morgan's, ᶜ over ∩", "LHS": "(x ∩ y)ᶜ", "RHS": "xᶜ ∪ yᶜ", "level": 2},
+        {"name": "ann1", "text": "Annihilation of ∪", "LHS": "x ∪ 𝓤", "RHS": "𝓤", "level": 2},
+        {"name": "ann2", "text": "Annihilation of ∩", "LHS": "x ∩ ∅", "RHS": "∅", "level": 2},
+        {"name": "abs1", "text": "Absorption law 1", "LHS": "x ∪ (x ∩ y)", "RHS": "x", "level": 2},
+        {"name": "abs2", "text": "Absorption law 2", "LHS": "x ∩ (x ∪ y)", "RHS": "x", "level": 2},
+        {"name": "cemp", "text": "Complement of ∅", "LHS": "∅ᶜ", "RHS": "𝓤", "level": 2},
+        {"name": "cuni", "text": "Complement of 𝓤", "LHS": "𝓤ᶜ", "RHS": "∅", "level": 2}
     ]
 });
